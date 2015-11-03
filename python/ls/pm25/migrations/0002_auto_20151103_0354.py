@@ -7,13 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pm25', '0004_weather'),
+        ('pm25', '0001_initial'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='weather',
-            name='date',
-            field=models.CharField(max_length=20, blank=True),
+        migrations.AlterField(
+            model_name='history',
+            name='code',
+            field=models.CharField(max_length=10, blank=True),
         ),
     ]
