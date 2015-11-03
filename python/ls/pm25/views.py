@@ -1,9 +1,16 @@
-from django.shortcuts import render
+# -*- coding: utf-8 -*-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+from django.shortcuts import render, render_to_response
 from django.http import HttpResponse
 import requests
 from .models import Province, City, Town, Air, History
 import json
 import re
+import os
+from xml.dom.minidom import Document
 
 # Create your views here.
 baseUri = "http://apis.baidu.com/3023/weather/"
@@ -93,3 +100,38 @@ def updatetown(request):
         all += updatearea(Town, url, c.code)
 
     return HttpResponse(all)
+
+def _createNode(doc, model, node):
+     for m in model.objects.all():
+            n = doc.createElement('c')
+            n.setAttribute('cid', m.code)
+            n.setAttribute('n', m.name)
+            n.setAttribute('pid', m.parent)
+            node.appendChild(n)
+
+def getareaxml(request):
+    
+    filename = os.path.dirname(__file__) + "/area.xml"
+    if not os.path.exists(filename):
+        doc = Document()
+        body = doc.createElement('body')
+        doc.appendChild(body)
+        province = doc.createElement('province')
+        body.appendChild(province)
+        city = doc.createElement('city')
+        body.appendChild(city)
+        town = doc.createElement('town')
+        body.appendChild(town)
+        _createNode(doc, Province, province)
+        _createNode(doc, City, city)
+        _createNode(doc, Town, town)
+        
+        f = open(filename,'w')
+        f.write(doc.toprettyxml(indent = ''))
+        f.close()
+        
+        
+    file = open(filename, 'rb')
+    data = file.read()
+    return HttpResponse(data, content_type="application/xml")
+    
