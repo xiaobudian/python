@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import requests
-from .models import Province, City, Town
+from .models import Province, City, Town, Air, Weather
+import json
 
 # Create your views here.
 baseUri = "http://apis.baidu.com/3023/weather/"
@@ -13,13 +14,14 @@ def getareadata(url):
     }
 
     response = requests.get(url, headers=headers)
-    return response.json()
+
+    return response
 
 def updatearea(model, url):
     
     data = getareadata(baseUri+url)
     all = ""
-    for d in data:
+    for d in data.json():
         m = model()
         m.name = d[0]
         m.code = d[1]
@@ -33,10 +35,18 @@ def index(request):
     return HttpResponse("Welcome to ls weather info services.")
     
 def getweather(request, code):
-    url = baseUri + "weather?id=" + code
-    
-    weather = getareadata(url)
-    return HttpResponse(str(weather))
+
+    air = Air.objects.first()
+    needupdate = True
+    if (air is not None):
+        if(air.time != '000'):
+            needupdate = False
+    if needupdate:
+        url = baseUri + "weather?id=" + code
+        weather = getareadata(url)
+        air_new = Air(**json.loads(weather.text))
+        return HttpResponse(air_new.time)
+    return HttpResponse(air)
     
 def updateprovince(request):
     Province.objects.all().delete()
