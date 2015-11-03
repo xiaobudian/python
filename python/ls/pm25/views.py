@@ -116,15 +116,26 @@ def getareaxml(request):
         doc = Document()
         body = doc.createElement('body')
         doc.appendChild(body)
-        province = doc.createElement('province')
-        body.appendChild(province)
-        city = doc.createElement('city')
-        body.appendChild(city)
-        town = doc.createElement('town')
-        body.appendChild(town)
-        _createNode(doc, Province, province)
-        _createNode(doc, City, city)
-        _createNode(doc, Town, town)
+        
+        for p in Province.objects.all():
+            province = doc.createElement('province')
+            province.setAttribute('cid', p.code)
+            province.setAttribute('n', p.name)
+            province.setAttribute('pid', p.parent)
+            for c in City.objects.filter(parent=p.code):
+                city = doc.createElement('city')
+                city.setAttribute('cid', c.code)
+                city.setAttribute('n', c.name)
+                city.setAttribute('pid', c.parent)
+                for t in Town.objects.filter(parent=c.code):
+                    town = doc.createElement('town')
+                    town.setAttribute('cid', t.code)
+                    town.setAttribute('n', t.name)
+                    town.setAttribute('pid', t.parent)
+                    city.appendChild(town)
+                province.appendChild(city)
+            body.appendChild(province)
+        
         
         f = open(filename,'w')
         f.write(doc.toprettyxml(indent = ''))
