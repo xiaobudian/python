@@ -4,11 +4,7 @@ import requests
 from .models import Province, City, Town
 
 # Create your views here.
-def index(requst):
-    all = ""
-    for p in Province.objects.all():
-        all += p.name + "\n"
-    return HttpResponse(all)
+baseUri = "http://apis.baidu.com/3023/weather/"
 
 def getareadata(url):
 
@@ -19,53 +15,52 @@ def getareadata(url):
     response = requests.get(url, headers=headers)
     return response.json()
 
-
-def updateprovince(requst):
-    for p in Province.objects.all():
-        p.delete()
-
-    url = "http://apis.baidu.com/3023/weather/province"
-    data = getareadata(url)
+def updatearea(model, url):
+    
+    data = getareadata(baseUri+url)
     all = ""
     for d in data:
-        p = Province()
-        p.name = d[0]
-        p.code = d[1]
-        p.save()
-        all += p.name + " "
+        m = model()
+        m.name = d[0]
+        m.code = d[1]
+        m.save()
+        all += m.name + " "
+    
+    return all
 
-    return HttpResponse(all)
+def index(request):
+           
+    return HttpResponse("Welcome to ls weather info services.")
+    
+def getweather(request, code):
+    url = baseUri + "weather?id=" + code
+    
+    weather = getareadata(url)
+    return HttpResponse(str(weather))
+    
+def updateprovince(request):
+    Province.objects.all().delete()
+    
+    url = "province"
+  
+    return HttpResponse(updatearea(Province, url))
 
-def updatecity(requst):
-    for c in City.objects.all():
-        c.delete()
+def updatecity(request):
+    City.objects.all().delete()
+    
     all = ""
     for p in Province.objects.all():
-        url = "http://apis.baidu.com/3023/weather/city?id=" + p.code
-        data = getareadata(url)
-
-        for d in data:
-            c = City()
-            c.name = d[0]
-            c.code = d[1]
-            c.save()
-            all += c.name + " "
+        url = "city?id=" + p.code
+        all += updatearea(City, url)
 
     return HttpResponse(all)
  
-def updatetown(requst):
-    for t in Town.objects.all():
-        t.delete()
+def updatetown(request):
+    Town.objects.all().delete()
+    
     all = ""
     for c in City.objects.all():
-        url = "http://apis.baidu.com/3023/weather/town?id=" + c.code
-        data = getareadata(url)
-
-        for d in data:
-            t = Town()
-            t.name = d[0]
-            t.code = d[1]
-            t.save()
-            all += t.name + " "
+        url = "town?id=" + c.code
+        all += updatearea(Town, url)
 
     return HttpResponse(all)
