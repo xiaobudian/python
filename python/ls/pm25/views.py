@@ -101,43 +101,36 @@ def updatetown(request):
 
     return HttpResponse(all)
 
-def _createNode(doc, model, node):
-     for m in model.objects.all():
-            n = doc.createElement('c')
-            n.setAttribute('cid', m.code)
-            n.setAttribute('n', m.name)
-            n.setAttribute('pid', m.parent)
-            node.appendChild(n)
+def _createNode(doc, name, model):
+    node = doc.createElement(name)
+    node.setAttribute('name', model.name)
+    node.setAttribute('code', model.code)
+    return node
+
+def _createDoc():
+    doc = Document()
+    body = doc.createElement('body')
+    doc.appendChild(body)
+        
+    for p in Province.objects.all():
+        province = _createNode(doc, 'province', p)
+        for c in City.objects.filter(parent=p.code):
+            city = _createNode(doc, 'city', c)
+            for t in Town.objects.filter(parent=c.code):
+                town = _createNode(doc, 'town', t)
+                city.appendChild(town)
+            province.appendChild(city)
+        body.appendChild(province)
+    return doc        
 
 def getareaxml(request):
     
     filename = os.path.dirname(__file__) + "/area.xml"
     if not os.path.exists(filename):
-        doc = Document()
-        body = doc.createElement('body')
-        doc.appendChild(body)
-        
-        for p in Province.objects.all():
-            province = doc.createElement('province')
-            province.setAttribute('name', p.name)
-            province.setAttribute('code', p.code)
-            for c in City.objects.filter(parent=p.code):
-                city = doc.createElement('city')
-                city.setAttribute('name', c.name)
-                city.setAttribute('code', c.code)
-                for t in Town.objects.filter(parent=c.code):
-                    town = doc.createElement('town')
-                    town.setAttribute('name', t.name)
-                    town.setAttribute('code', t.code)
-                    city.appendChild(town)
-                province.appendChild(city)
-            body.appendChild(province)
-        
-        
+        doc = _createDoc()        
         f = open(filename,'w')
         f.write(doc.toprettyxml(indent = ''))
-        f.close()
-        
+        f.close()        
         
     file = open(filename, 'rb')
     data = file.read()
